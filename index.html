@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Taller de fuerzas · Plano inclinado con polea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFE5F0; --panel:#FBF7FB; --panel2:#F1E5F3; --ink:#2B1733; --muted:#715C7B; --line:#DCC9E0;
+  --accent:#C8176F; --accent-ink:#FFFFFF; --focus:#8A2BE2; --chalk:#F4EBDD; --board:#241230;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#150A19; --panel:#231230; --panel2:#2E1A3B; --ink:#F3E9F4; --muted:#B9A4C3; --line:#46294F;
+    --accent:#FF4FA8; --accent-ink:#2A0F22; --focus:#D6A6FF; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#150A19; --panel:#231230; --panel2:#2E1A3B; --ink:#F3E9F4; --muted:#B9A4C3; --line:#46294F;
+  --accent:#FF4FA8; --accent-ink:#2A0F22; --focus:#D6A6FF; color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+.app{max-width:1320px;margin:0 auto;padding:18px 16px 40px}
+.top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(1.9rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;line-height:1}
+.sub{margin:8px 0 0;color:var(--muted);max-width:60ch}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 14px;align-items:center}
+.presets .lbl{color:var(--muted);margin-right:4px}
+.btn{font:inherit;font-weight:600;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer;transition:transform .12s,background .12s,border-color .12s}
+.btn:hover{border-color:var(--accent)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn.on{border-color:var(--accent);background:var(--panel2)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+@media (max-width:1020px){.lab{grid-template-columns:minmax(0,1fr)}}
+.stage{display:flex;flex-direction:column;gap:14px;min-width:0}
+.board{position:relative;border-radius:20px;overflow:hidden;background:var(--board);box-shadow:0 10px 30px rgba(20,5,25,.25)}
+canvas{display:block;width:100%;height:auto}
+#scene{aspect-ratio:16/10}
+@media (max-width:700px){#scene{aspect-ratio:4/3.4}}
+.chip{position:absolute;left:12px;top:12px;max-width:calc(100% - 24px);background:rgba(244,235,221,.94);color:#2B1733;font-weight:700;padding:6px 12px;border-radius:999px;font-size:13.5px}
+.chip.warn{background:#FF4FA8;color:#2A0F22}
+.transport{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:10px 14px}
+.mini{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13.5px}
+.mini.grow{flex:1;min-width:190px}
+.mini.grow input{flex:1;accent-color:var(--accent)}
+select,input[type=text],input[type=number]{font:inherit;color:var(--ink);background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;padding:5px 8px}
+.notebook{background:var(--board);color:var(--chalk);border-radius:18px;padding:16px 20px;box-shadow:0 8px 24px rgba(20,5,25,.2)}
+.hand{font-family:"Caveat","Bradley Hand",cursive;font-weight:700;font-size:clamp(1.3rem,2.6vw,1.8rem);line-height:1.2;overflow-wrap:anywhere}
+.hand.num{color:#FFD23F;margin-top:2px}
+.notebook .note{margin-top:8px;font-size:12.5px;opacity:.72}
+.fbds{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.fbds{grid-template-columns:1fr}}
+.fbds figure{margin:0;border-radius:18px;overflow:hidden;background:var(--board);box-shadow:0 8px 24px rgba(20,5,25,.2)}
+.fbds canvas{aspect-ratio:1/.92}
+.readout{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.card{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.card .k{color:var(--muted);font-size:12.5px}
+.card strong{font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+.card .u{color:var(--muted);font-size:12px}
+.panel{background:var(--panel);border:1.5px solid var(--line);border-radius:20px;padding:6px 16px 16px;position:sticky;top:calc(12px + env(safe-area-inset-top,0px));max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:1020px){.panel{position:static;max-height:none}}
+.grp{padding:12px 0;border-bottom:1.5px dashed var(--line)}
+.grp:last-child{border-bottom:0}
+.grp h2{margin:0 0 10px;font-size:1.05rem;font-weight:800;letter-spacing:-.01em}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;margin-bottom:10px}
+.row label{font-weight:600;font-size:13.5px}
+.row .val{display:flex;align-items:center;gap:5px}
+.row .num{width:84px;text-align:right}
+.row .u{color:var(--muted);font-size:12.5px;min-width:30px}
+.rng{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.ident{display:grid;grid-template-columns:1fr 84px 42px;gap:8px;align-items:center;margin:4px 0 8px}
+.ident span{font-weight:600;font-size:13.5px}
+.ident input[type=text]{width:100%}
+.ident input[type=color]{width:42px;height:34px;padding:2px;border:1.5px solid var(--line);border-radius:10px;background:var(--panel2);cursor:pointer}
+.planets{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 10px}
+.planets .btn{padding:4px 10px;font-size:12.5px}
+.legend{width:100%;border-collapse:collapse;font-size:13px}
+.legend th{font-weight:600;color:var(--muted);text-align:right;padding:2px 4px;font-size:12px}
+.legend th:first-child{text-align:left}
+.legend td{padding:5px 4px;border-top:1px solid var(--line);vertical-align:middle}
+.legend td.v{text-align:right;white-space:nowrap}
+.legend label{display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:600}
+.legend .sw{display:inline-block;width:22px;height:5px;border-radius:3px;flex:none}
+.legend input{accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:12.5px;margin:8px 0 0}
+.matrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin:0 0 10px}
+.matrow label{font-weight:600;font-size:13.5px}
+.matrow select{min-width:150px}
+.matrow .hint{grid-column:1/-1;margin:0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Taller de fuerzas</h1>
+      <p class="sub">Un bloque sobre un plano inclinado, unido por una cuerda y una polea a otro bloque que cuelga. Cambia cualquier valor y mira cómo reaccionan los vectores.</p>
+    </div>
+    <button id="theme" class="btn ghost" type="button">Cambiar tema de la página</button>
+  </header>
+
+  <div class="presets" id="presets" role="group" aria-label="Ejemplos listos"><span class="lbl">Prueba un ejemplo:</span></div>
+
+  <main class="lab">
+    <section class="stage">
+      <div class="board">
+        <canvas id="scene" role="img" aria-label="Plano inclinado con dos masas unidas por una polea y sus vectores de fuerza"></canvas>
+        <div class="chip" id="status">Listo</div>
+      </div>
+
+      <div class="transport">
+        <button id="play" class="btn primary" type="button">Iniciar</button>
+        <button id="reset" class="btn" type="button">Reiniciar</button>
+        <label class="mini">Velocidad
+          <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+        </label>
+        <label class="mini grow">Tamaño de los vectores
+          <input id="vscale" type="range" min="0.4" max="2.5" step="0.05" value="1">
+        </label>
+      </div>
+
+      <div class="notebook" aria-live="polite">
+        <div class="hand" id="eqSym"></div>
+        <div class="hand num" id="eqNum"></div>
+        <div class="note">Sentido positivo: el bloque del plano sube hacia la polea y el bloque colgante baja.</div>
+      </div>
+
+      <div class="fbds">
+        <figure><canvas id="fbdA" role="img" aria-label="Diagrama de cuerpo libre del bloque en el plano"></canvas></figure>
+        <figure><canvas id="fbdB" role="img" aria-label="Diagrama de cuerpo libre del bloque colgante"></canvas></figure>
+      </div>
+
+      <div class="readout" id="readout"></div>
+    </section>
+
+    <aside class="panel" id="panel" aria-label="Propiedades modificables"></aside>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const D2R = Math.PI / 180;
+const E = 1.5;          // altura de la mesa (m)
+const PR = 0.4;         // radio de la polea (m)
+/* materiales: la densidad (kg/m³) define el tamaño del bloque; μ típicos aproximados contra el plano (solo cuentan para el bloque del plano) */
+const MATS = [
+  {id:'madera',   name:'Madera',        rho:600,   mus:.30, muk:.20, color:'#D9A066', tex:'wood'},
+  {id:'plastico', name:'Plástico',      rho:1200,  mus:.35, muk:.25, color:'#6EC1FF', tex:'gloss'},
+  {id:'goma',     name:'Goma',          rho:1100,  mus:.90, muk:.75, color:'#8A8A99', tex:'dots'},
+  {id:'hielo',    name:'Hielo',         rho:920,   mus:.10, muk:.03, color:'#CFEFFF', tex:'gloss'},
+  {id:'aluminio', name:'Aluminio',      rho:2700,  mus:.40, muk:.25, color:'#D5DBE1', tex:'metal'},
+  {id:'piedra',   name:'Piedra',        rho:2600,  mus:.60, muk:.45, color:'#A29B8F', tex:'stone'},
+  {id:'metal',    name:'Metal (acero)', rho:7850,  mus:.45, muk:.30, color:'#7E8EA3', tex:'metal'},
+  {id:'plomo',    name:'Plomo',         rho:11340, mus:.50, muk:.35, color:'#6F6A78', tex:'plain'},
+];
+const MAT = id => MATS.find(x => x.id === id) || MATS[0];
+const FONT = '"Bricolage Grotesque", system-ui, sans-serif';
+const COL = {W:'#FFD23F', Pc:'#FFE27A', N:'#5CE0A0', T:'#FF4FA8', f:'#FF8A1F', Fa:'#FF5A4F', net:'#FFFFFF', v:'#F6E6B4', a:'#D6A6FF'};
+
+/* ---------- parámetros ---------- */
+const p = {nA:'M', nB:'m', cA:MATS[0].color, cB:MATS[4].color, mA:'madera', mB:'aluminio'};
+const PRESETS = [
+  {name:'Del cuaderno (sin fricción)', v:{M:2,m:2,th:30,L:6,d0:3.5,ym0:3.4,mus:0,muk:0,F:0,g:9.81,v0:0}},
+  {name:'Con fricción', v:{M:3,m:2.5,th:30,L:6,d0:3,ym0:3.2,mus:.3,muk:.2,F:0,g:9.81,v0:0}},
+  {name:'Equilibrio estático', v:{M:4,m:1.5,th:30,L:6,d0:3,ym0:2.5,mus:.4,muk:.3,F:0,g:9.81,v0:0}},
+  {name:'En la Luna', v:{M:3,m:2.5,th:30,L:6,d0:3,ym0:3.2,mus:.3,muk:.2,F:0,g:1.62,v0:0}},
+  {name:'Hielo (casi sin fricción)', v:{M:3,m:2.5,th:30,L:6,d0:3.5,ym0:3.4,mus:.10,muk:.03,F:0,g:9.81,v0:0,mA:'hielo',mB:'plomo'}},
+  {name:'Goma (se queda quieto)', v:{M:6,m:2,th:30,L:6,d0:3,ym0:3,mus:.90,muk:.75,F:0,g:9.81,v0:0,mA:'goma',mB:'madera'}},
+  {name:'Cuerda floja', v:{M:3,m:1,th:30,L:6,d0:4,ym0:3.5,mus:.2,muk:.1,F:60,g:9.81,v0:0}},
+  {name:'El bloque del plano baja', v:{M:6,m:1,th:40,L:6,d0:4,ym0:2,mus:.2,muk:.15,F:0,g:9.81,v0:0}},
+];
+Object.assign(p, PRESETS[1].v);
+
+const GEO = new Set(['th','L','d0','ym0','v0']);
+const GROUPS = [
+  {title:'Los dos cuerpos', rows:[
+    {t:'ident', k:'nA', ck:'cA', label:'Bloque del plano'},
+    {t:'mat', k:'mA', ck:'cA', which:'A'},
+    {t:'num', k:'M', label:'Masa', unit:'kg', min:.1, max:30, step:.1, hmin:.05, hmax:1000},
+    {t:'ident', k:'nB', ck:'cB', label:'Bloque colgante'},
+    {t:'mat', k:'mB', ck:'cB', which:'B'},
+    {t:'num', k:'m', label:'Masa', unit:'kg', min:.1, max:30, step:.1, hmin:.05, hmax:1000},
+  ]},
+  {title:'El plano y la fricción', rows:[
+    {t:'num', k:'th', label:'Ángulo θ', unit:'°', min:5, max:75, step:1, hmin:1, hmax:80},
+    {t:'num', k:'L', label:'Largo del plano', unit:'m', min:3, max:9, step:.5, hmin:3, hmax:9},
+    {t:'num', k:'d0', label:'Distancia inicial a la polea', unit:'m', min:.5, max:5, step:.05},
+    {t:'num', k:'ym0', label:'Altura inicial del bloque colgante', unit:'m', min:.3, max:3, step:.05},
+    {t:'num', k:'mus', label:'Coef. de fricción estática μs', unit:'', min:0, max:1.5, step:.01, hmin:0, hmax:5},
+    {t:'num', k:'muk', label:'Coef. de fricción cinética μk', unit:'', min:0, max:1.5, step:.01, hmin:0, hmax:5},
+  ]},
+  {title:'Entorno y fuerzas externas', rows:[
+    {t:'num', k:'g', label:'Gravedad g', unit:'m/s²', min:.5, max:25, step:.01, hmin:.1, hmax:100},
+    {t:'planets'},
+    {t:'num', k:'F', label:'Fuerza aplicada al bloque del plano', unit:'N', min:-60, max:60, step:1, hmin:-500, hmax:500},
+    {t:'num', k:'v0', label:'Velocidad inicial', unit:'m/s', min:-3, max:3, step:.1, hmin:-10, hmax:10},
+  ]},
+];
+const ctl = {};
+
+/* ---------- estado de la simulación ---------- */
+let S = null, running = false, speed = 1, vscale = 1, acc = 0;
+const show = {W:true, Pc:true, N:true, T:true, f:true, Fa:true, net:true, v:true, a:true};
+const idCtl = {};   // inputs de color por clave (cA, cB)
+
+function resetSim(){
+  S = {x:0, v:p.v0, xm:0, vm:p.v0, slack:false, t:0, Q:0, WF:0, collided:null};
+  acc = 0;
+}
+
+/* ---------- geometría ---------- */
+function boxSize(mass, rho){ return clamp(4.0 * Math.cbrt(mass / rho), 0.30, 0.8); }
+function geometry(){
+  const th = p.th * D2R, L = p.L, s = Math.sin(th), c = Math.cos(th);
+  const wM = boxSize(p.M, MAT(p.mA).rho), wm = boxSize(p.m, MAT(p.mB).rho);
+  const B = L * c, H = L * s, r = PR;
+  const u = {x:c, y:s}, n = {x:-s, y:c};
+  const Cp = {x:B + n.x * (wM/2 - r), y:E + H + n.y * (wM/2 - r)};
+  const xr = Cp.x + r;
+  const dmin = wM/2 + .15, dmax = L - wM/2 - .05;
+  const ymin = wm/2 + .05, ymax = Math.max(ymin + .05, Cp.y - r - .05 - .25 - wm/2);
+  const d0 = clamp(p.d0, dmin, dmax), ym0 = clamp(p.ym0, ymin, ymax);
+  return {th, L, s, c, wM, wm, B, H, r, u, n, Cp, xr, dmin, dmax, ymin, ymax, d0, ym0, q0:L - d0};
+}
+function limits(){
+  const G = geometry();
+  return {
+    xmaxM: G.d0 - G.wM/2 - .05, xminM: G.wM/2 - G.q0,
+    xmaxm: G.ym0 - G.wm/2, xminm: G.ym0 + G.wm/2 - G.Cp.y + G.r + .05
+  };
+}
+
+/* ---------- física ---------- */
+function dynSlack(){
+  const M = p.M, m = p.m, gr = p.g, F = p.F, s = Math.sin(p.th * D2R), co = Math.cos(p.th * D2R);
+  const N = M * gr * co, Fk = p.muk * N, Fs = p.mus * N;
+  const Gd = F - M * gr * s;
+  let aM, fu, mode;
+  if (Math.abs(S.v) < 1e-3){
+    if (Math.abs(Gd) <= Fs + 1e-9){ aM = 0; fu = -Gd; mode = 'estática'; }
+    else { const d = Math.sign(Gd); aM = (Gd - d * Fk) / M; fu = -d * Fk; mode = 'cinética'; }
+  } else {
+    const d = Math.sign(S.v); aM = (Gd - d * Fk) / M; fu = -d * Fk; mode = 'cinética';
+  }
+  const am = gr;
+  return {aM, am, fu, mode, T:0, N, Fk, Fs};
+}
+function dyn(){
+  if (S.slack) return dynSlack();
+  const M = p.M, m = p.m, gr = p.g, F = p.F, s = Math.sin(p.th * D2R), co = Math.cos(p.th * D2R);
+  const N = M * gr * co, Fk = p.muk * N, Fs = p.mus * N;
+  const Gd = m * gr - M * gr * s + F;
+  let a, fu, mode;
+  if (Math.abs(S.v) < 1e-3){
+    if (Math.abs(Gd) <= Fs + 1e-9){ a = 0; fu = -Gd; mode = 'estática'; }
+    else { const d = Math.sign(Gd); a = (Gd - d * Fk) / (M + m); fu = -d * Fk; mode = 'cinética'; }
+  } else {
+    const d = Math.sign(S.v); a = (Gd - d * Fk) / (M + m); fu = -d * Fk; mode = 'cinética';
+  }
+  const T = m * (gr - a);
+  if (T < -1e-9){ S.slack = true; S.xm = S.x; S.vm = S.v; return dynSlack(); }
+  return {aM:a, am:a, fu, mode, T, N, Fk, Fs};
+}
+function stepPhys(h){
+  const d = dyn();
+  const vOld = S.v, vmOld = S.vm;
+  if (!S.slack){
+    if (d.mode === 'estática'){ S.v = 0; }
+    else {
+      let vn = S.v + d.aM * h;
+      if (S.v * vn < 0) vn = 0;
+      S.x += .5 * (S.v + vn) * h; S.v = vn;
+    }
+    S.xm = S.x; S.vm = S.v;
+  } else {
+    let vn = S.v + d.aM * h;
+    if (d.mode === 'estática' || S.v * vn < 0) vn = 0;
+    S.x += .5 * (S.v + vn) * h; S.v = vn;
+    const vmn = S.vm + d.am * h;
+    S.xm += .5 * (S.vm + vmn) * h; S.vm = vmn;
+    if (S.xm >= S.x){
+      const vc = (p.M * S.v + p.m * S.vm) / (p.M + p.m);
+      S.v = vc; S.vm = vc; S.xm = S.x; S.slack = false;
+    }
+  }
+  S.Q += Math.abs(d.fu * (S.v + vOld) / 2) * h;
+  S.WF += p.F * S.v * h;
+  S.t += h;
+
+  const lim = limits(); let msg = null;
+  if (!S.slack){
+    const hi = Math.min(lim.xmaxM, lim.xmaxm), lo = Math.max(lim.xminM, lim.xminm);
+    if (S.x >= hi){ S.x = hi; msg = lim.xmaxM <= lim.xmaxm ? `${p.nA} llegó a la polea` : `${p.nB} tocó el suelo`; }
+    else if (S.x <= lo){ S.x = lo; msg = lim.xminM >= lim.xminm ? `${p.nA} llegó a la base del plano` : `${p.nB} llegó a la polea`; }
+    S.xm = S.x;
+  } else {
+    if (S.x >= lim.xmaxM){ S.x = lim.xmaxM; msg = `${p.nA} llegó a la polea`; }
+    else if (S.x <= lim.xminM){ S.x = lim.xminM; msg = `${p.nA} llegó a la base del plano`; }
+    if (S.xm >= lim.xmaxm){ S.xm = lim.xmaxm; msg = `${p.nB} tocó el suelo`; }
+  }
+  if (msg){ S.collided = msg; S.v = 0; S.vm = 0; setRunning(false); }
+}
+
+/* ---------- fuerzas para dibujar ---------- */
+const lat = (dir, px) => ({ox:dir.x * px, oy:-dir.y * px});
+function buildForces(G, d){
+  const M = p.M, m = p.m, gr = p.g, s = G.s, co = G.c, u = G.u, n = G.n;
+  const N = d.N;
+  const A = [
+    {key:'W', sym:'P', color:COL.W, vx:0, vy:-M*gr, ...lat(n, 0)},
+    {key:'Pc', sym:'P∥', color:COL.Pc, vx:-u.x*M*gr*s, vy:-u.y*M*gr*s, dash:true, w:2.5, ...lat(n, -20)},
+    {key:'Pc', sym:'P⊥', color:COL.Pc, vx:-n.x*M*gr*co, vy:-n.y*M*gr*co, dash:true, w:2.5, ...lat(u, 16)},
+    {key:'N', sym:'N', color:COL.N, vx:n.x*N, vy:n.y*N, ...lat(u, -16)},
+    {key:'T', sym:'T', color:COL.T, vx:u.x*d.T, vy:u.y*d.T, ...lat(n, 0)},
+    {key:'f', sym:d.mode === 'estática' ? 'fs' : 'fk', color:COL.f, vx:u.x*d.fu, vy:u.y*d.fu, ...lat(n, -9)},
+    {key:'Fa', sym:'F', color:COL.Fa, vx:u.x*p.F, vy:u.y*p.F, ...lat(n, 10)},
+    {key:'net', sym:'ΣF', color:COL.net, vx:u.x*M*d.aM, vy:u.y*M*d.aM, w:4.5, ...lat(n, -31)},
+  ];
+  const ex = {x:1, y:0};
+  const B = [
+    {key:'W', sym:'P', color:COL.W, vx:0, vy:-m*gr, ...lat(ex, 10)},
+    {key:'T', sym:'T', color:COL.T, vx:0, vy:d.T, ...lat(ex, -10)},
+    {key:'net', sym:'ΣF', color:COL.net, vx:0, vy:-m*d.am, w:4.5, ...lat(ex, 24)},
+  ];
+  return {A, B};
+}
+
+/* ---------- dibujo ---------- */
+const fmt = (x, k = 2) => { const v = Number(x); return (Math.abs(v) < Math.pow(10, -k) / 2 ? 0 : v).toFixed(k); };
+function prep(cv){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(10, Math.round(r.width)), h = Math.max(10, Math.round(r.height));
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)){ cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, W:w, H:h};
+}
+function board(ctx, W, H){
+  const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#1F1125'); g.addColorStop(1, '#33193B');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(244,235,221,.07)';
+  for (let x = 14; x < W; x += 28) for (let y = 14; y < H; y += 28) ctx.fillRect(x, y, 1.6, 1.6);
+}
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const f = v => Math.round(clamp(v + (amt > 0 ? (255 - v) * amt : v * amt), 0, 255));
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
+}
+function arrow(ctx, x0, y0, x1, y1, color, o = {}){
+  const w = o.w || 3, head = o.head || 11, dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+  if (len < 1) return;
+  const ux = dx / len, uy = dy / len;
+  const pass = (col, ww) => {
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = ww; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.setLineDash(o.dash || []);
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - ux * head * .7, y1 - uy * head * .7); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - ux * head - uy * head * .45, y1 - uy * head + ux * head * .45);
+    ctx.lineTo(x1 - ux * head + uy * head * .45, y1 - uy * head - ux * head * .45);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  ctx.save(); pass('rgba(20,8,24,.7)', w + 3); pass(color, w); ctx.restore();
+}
+function label(ctx, text, x, y, color, ux, uy, size = 13){
+  ctx.save();
+  ctx.font = `700 ${size}px ${FONT}`;
+  ctx.textAlign = ux > .35 ? 'left' : ux < -.35 ? 'right' : 'center';
+  ctx.textBaseline = uy > .35 ? 'top' : uy < -.35 ? 'bottom' : 'middle';
+  ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(20,8,24,.88)'; ctx.strokeText(text, x, y);
+  ctx.fillStyle = color; ctx.fillText(text, x, y);
+  ctx.restore();
+}
+function drawForces(ctx, cx, cy, list, kF, maxLen){
+  for (const f of list){
+    if (!show[f.key]) continue;
+    const mag = Math.hypot(f.vx, f.vy);
+    if (mag < 0.02) continue;
+    let px = f.vx * kF, py = -f.vy * kF, len = Math.hypot(px, py);
+    if (len < 14){ px *= 14 / len; py *= 14 / len; len = 14; }
+    if (len > maxLen){ px *= maxLen / len; py *= maxLen / len; len = maxLen; }
+    const ux = px / len, uy = py / len;
+    const x0 = cx + f.ox, y0 = cy + f.oy;
+    arrow(ctx, x0, y0, x0 + px, y0 + py, f.color, {dash:f.dash ? [6, 5] : null, w:f.w || 3});
+    label(ctx, `${f.sym} ${fmt(mag, 1)} N`, x0 + px + ux * 6, y0 + py + uy * 6, f.color, ux, uy);
+  }
+}
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function lumin(hex){ const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; }
+function texture(ctx, s, tex){
+  const h = s / 2; ctx.save(); roundRect(ctx, -h, -h, s, s, Math.min(8, s * .18)); ctx.clip();
+  if (tex === 'wood'){
+    ctx.strokeStyle = 'rgba(90,45,10,.28)'; ctx.lineWidth = 1.3;
+    for (let i = 1; i < 6; i++){ const y = -h + s * i / 6; ctx.beginPath(); ctx.moveTo(-h, y); ctx.bezierCurveTo(-h * .3, y - s * .06, h * .3, y + s * .06, h, y); ctx.stroke(); }
+  } else if (tex === 'metal'){
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.beginPath(); ctx.moveTo(-h, h * .2); ctx.lineTo(-h * .2, -h); ctx.lineTo(h * .1, -h); ctx.lineTo(-h, h * .55); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(h * .5, h); ctx.lineTo(h, h * .45); ctx.lineTo(h, h); ctx.fill();
+  } else if (tex === 'stone'){
+    ctx.fillStyle = 'rgba(40,35,30,.30)';
+    for (let i = 0; i < 16; i++){ const a = (i * 97 % 100) / 100, b = (i * 53 % 100) / 100; ctx.beginPath(); ctx.arc(-h + a * s, -h + b * s, 1 + (i % 3) * .7, 0, 7); ctx.fill(); }
+  } else if (tex === 'dots'){
+    ctx.fillStyle = 'rgba(20,20,30,.28)';
+    for (let x = -h + s / 6; x < h; x += s / 3) for (let y = -h + s / 6; y < h; y += s / 3){ ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, s * .035), 0, 7); ctx.fill(); }
+  } else if (tex === 'gloss'){
+    ctx.fillStyle = 'rgba(255,255,255,.32)'; ctx.beginPath(); ctx.moveTo(-h, -h); ctx.lineTo(h * .3, -h); ctx.lineTo(-h, h * .3); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawBlock(ctx, cx, cy, size, ang, color, name, mass, tex){
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+  const g = ctx.createLinearGradient(-size/2, -size/2, size/2, size/2);
+  g.addColorStop(0, shade(color, .25)); g.addColorStop(1, shade(color, -.12));
+  ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+  roundRect(ctx, -size/2, -size/2, size, size, Math.min(8, size * .18)); ctx.fillStyle = g; ctx.fill();
+  ctx.shadowColor = 'transparent'; texture(ctx, size, tex); ctx.lineWidth = 2; ctx.strokeStyle = shade(color, -.45); ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = lumin(color) < .45 ? '#FFF5FA' : '#2B1733';
+  const fs = clamp(size * .42, 11, 20);
+  if (size >= 34){
+    ctx.font = `800 ${fs}px ${FONT}`; ctx.fillText(name, cx, cy - fs * .42);
+    ctx.font = `600 ${Math.max(10, fs * .62)}px ${FONT}`; ctx.fillText(`${fmt(mass, 1)} kg`, cx, cy + fs * .55);
+  } else { ctx.font = `800 ${fs}px ${FONT}`; ctx.fillText(name, cx, cy); }
+  ctx.restore();
+}
+
+let CA = null;  // cálculo del cuadro actual
+function computeAll(){
+  const G = geometry(), d = dyn(), Fo = buildForces(G, d);
+  CA = {G, d, Fo};
+  return CA;
+}
+
+function drawScene(){
+  const cv = $('#scene'), {ctx, W, H} = prep(cv), {G, d, Fo} = CA;
+  board(ctx, W, H);
+  const pad = 18, totalW = G.B + 1.4, totalH = E + G.H + .9;
+  const k = Math.min(110, (W - 2*pad) / totalW, (H - 2*pad - 30) / totalH);
+  const free = H - k * totalH, oy = H - Math.max(30, free * .35), ox = (W - k * totalW) / 2 + .3 * k;
+  const P = (x, y) => [ox + k * x, oy - k * y];
+
+  // suelo
+  const gf = ctx.createLinearGradient(0, oy, 0, H); gf.addColorStop(0, '#47284F'); gf.addColorStop(1, '#2A1633');
+  ctx.fillStyle = gf; ctx.fillRect(0, oy, W, H - oy);
+  ctx.strokeStyle = 'rgba(244,235,221,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(W, oy); ctx.stroke();
+
+  // mesa
+  let [tx0, ty0] = P(-.3, E), [tx1, ty1] = P(G.B, 0);
+  ctx.fillStyle = '#5B3348'; ctx.fillRect(tx0, ty0, tx1 - tx0, ty1 - ty0);
+  ctx.strokeStyle = 'rgba(244,235,221,.12)'; ctx.lineWidth = 1;
+  for (let i = 1; i < 6; i++){ const x = tx0 + (tx1 - tx0) * i / 6; ctx.beginPath(); ctx.moveTo(x, ty0 + 4); ctx.lineTo(x, ty1); ctx.stroke(); }
+  ctx.fillStyle = '#7A4A62'; ctx.fillRect(tx0, ty0 - 4, tx1 - tx0, 6);
+
+  // cuña
+  const [ax, ay] = P(0, E), [bx, by] = P(G.B, E), [px_, py_] = P(G.B, E + G.H);
+  const gw = ctx.createLinearGradient(ax, py_, bx, ay); gw.addColorStop(0, '#6E8038'); gw.addColorStop(1, '#4C5B27');
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(px_, py_); ctx.closePath(); ctx.fillStyle = gw; ctx.fill(); ctx.restore();
+  ctx.lineJoin = 'round'; ctx.lineWidth = 2.5; ctx.strokeStyle = '#C5D36B'; ctx.stroke();
+  // superficie rugosa según μk
+  const ln = Math.hypot(px_ - ax, py_ - ay), step = 9, amp = Math.min(6, p.muk * 6 + (p.mus > 0 ? 1 : 0));
+  if (amp > 0.3){
+    const ux = (px_ - ax) / ln, uy = (py_ - ay) / ln, nx = uy, ny = -ux;
+    ctx.beginPath(); ctx.moveTo(ax, ay);
+    for (let i = 1; i * step < ln; i++){ const o = (i % 2 ? amp : 0); ctx.lineTo(ax + ux * i * step + nx * o, ay + uy * i * step + ny * o); }
+    ctx.lineTo(px_, py_); ctx.strokeStyle = '#E4EFA0'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  // ángulo y ángulo recto
+  ctx.strokeStyle = '#F4EBDD'; ctx.lineWidth = 2;
+  const ar = Math.min(40, ln * .3);
+  ctx.beginPath(); ctx.arc(ax, ay, ar, -G.th, 0); ctx.stroke();
+  label(ctx, `θ = ${fmt(p.th, 0)}°`, ax + (ar + 8) * Math.cos(-G.th / 2), ay + (ar + 8) * Math.sin(-G.th / 2) - 2, '#F4EBDD', 1, 0, 14);
+  ctx.strokeRect(bx - 11, by - 11, 11, 11);
+
+  // posiciones
+  const q = G.q0 + S.x, hw = G.wM / 2;
+  const cM = [q * G.c + G.n.x * hw, E + q * G.s + G.n.y * hw];
+  const att = [(q + hw) * G.c + G.n.x * hw, E + (q + hw) * G.s + G.n.y * hw];
+  const tp = [G.B + G.n.x * hw, E + G.H + G.n.y * hw];
+  const ym = G.ym0 - S.xm, cm = [G.xr, ym];
+  const [Cx, Cy] = P(G.Cp.x, G.Cp.y), Rp = G.r * k;
+  const [mx, my] = P(cm[0], cm[1]), [Mx, My] = P(cM[0], cM[1]);
+
+  // soporte y polea
+  ctx.strokeStyle = '#C5D36B'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(px_, py_); ctx.lineTo(Cx, Cy); ctx.stroke();
+
+  // cuerda
+  ctx.strokeStyle = '#F4EBDD'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+  const [a0x, a0y] = P(att[0], att[1]), [t0x, t0y] = P(tp[0], tp[1]);
+  ctx.beginPath(); ctx.moveTo(a0x, a0y);
+  if (S.slack){
+    const sl = Math.max(0, S.x - S.xm), hh = Math.min(.5, .6 * Math.sqrt(sl * Math.max(.5, G.L - q)) / 2) * k;
+    ctx.quadraticCurveTo((a0x + t0x) / 2 + G.n.x * hh, (a0y + t0y) / 2 - G.n.y * hh, t0x, t0y);
+  } else ctx.lineTo(t0x, t0y);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(Cx, Cy, Rp, -(90 * D2R + G.th), 0, false); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(Cx + Rp, Cy); ctx.lineTo(mx, my - G.wm * k / 2); ctx.stroke();
+
+  // polea
+  ctx.fillStyle = '#3A2243'; ctx.beginPath(); ctx.arc(Cx, Cy, Rp, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#F4EBDD'; ctx.lineWidth = 3; ctx.stroke();
+  const rot = (S.slack ? S.xm : S.x) / G.r;
+  ctx.strokeStyle = 'rgba(244,235,221,.75)'; ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++){ const aa = rot + i * Math.PI * 2 / 3; ctx.beginPath(); ctx.moveTo(Cx, Cy); ctx.lineTo(Cx + Math.cos(aa) * (Rp - 4), Cy + Math.sin(aa) * (Rp - 4)); ctx.stroke(); }
+  ctx.fillStyle = '#F4EBDD'; ctx.beginPath(); ctx.arc(Cx, Cy, 3.5, 0, Math.PI * 2); ctx.fill();
+
+  // bloques
+  drawBlock(ctx, Mx, My, G.wM * k, -G.th, p.cA, p.nA, p.M, MAT(p.mA).tex);
+  drawBlock(ctx, mx, my, G.wm * k, 0, p.cB, p.nB, p.m, MAT(p.mB).tex);
+
+  // vectores de fuerza
+  const ref = Math.max(p.M * p.g, p.m * p.g, Math.abs(p.F), 1e-6);
+  const kF = (Math.min(100, Math.max(60, Math.min(W, H) * .2)) / ref) * vscale;
+  const maxLen = Math.min(170, Math.min(W, H) * .34);
+  drawForces(ctx, Mx, My, Fo.A, kF, maxLen);
+  drawForces(ctx, mx, my, Fo.B, kF, maxLen);
+
+  // velocidad y aceleración
+  const kv = 24 * Math.min(1, k / 60 + .4), ka = 14 * Math.min(1, k / 60 + .4), cap = 120;
+  const motion = (cx, cy, vx, vy, off, kk, val, unit, color, sym) => {
+    let px = vx * kk, py = -vy * kk, len = Math.hypot(px, py);
+    if (Math.abs(val) < 0.005) return;
+    if (len > cap){ px *= cap / len; py *= cap / len; len = cap; }
+    if (len < 10){ px *= 10 / len; py *= 10 / len; len = 10; }
+    arrow(ctx, cx + off[0], cy + off[1], cx + off[0] + px, cy + off[1] + py, color, {w:3, dash:[2, 5]});
+    label(ctx, `${sym} ${fmt(Math.abs(val))} ${unit}`, cx + off[0] + px + px / len * 6, cy + off[1] + py + py / len * 6, color, px / len, py / len);
+  };
+  // bloque del plano: v y a por debajo (dentro de la cuña), en dirección −n
+  const dv = G.wM * k / 2 + 14, da = G.wM * k / 2 + 32;
+  if (show.v) motion(Mx, My, G.u.x * S.v, G.u.y * S.v, [-G.n.x * dv, G.n.y * dv], kv, S.v, 'm/s', COL.v, 'v');
+  if (show.a) motion(Mx, My, G.u.x * d.aM, G.u.y * d.aM, [-G.n.x * da, G.n.y * da], ka, d.aM, 'm/s²', COL.a, 'a');
+  // bloque colgante: v y a a la derecha
+  if (show.v) motion(mx, my, 0, -S.vm, [G.wm * k / 2 + 16, 0], kv, S.vm, 'm/s', COL.v, 'v');
+  if (show.a) motion(mx, my, 0, -d.am, [G.wm * k / 2 + 34, 0], ka, d.am, 'm/s²', COL.a, 'a');
+}
+
+function drawFBD(cv, which){
+  const {ctx, W, H} = prep(cv), {G, Fo} = CA;
+  board(ctx, W, H);
+  const cx = W / 2, cy = H / 2 + 8;
+  const ref = Math.max(p.M * p.g, p.m * p.g, Math.abs(p.F), 1e-6);
+  const kF = (Math.min(W, H) * .3 / ref) * vscale, maxLen = Math.min(W, H) * .42;
+  ctx.fillStyle = '#F4EBDD'; ctx.font = `800 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  const nm = which === 'A' ? p.nA : p.nB, ms = which === 'A' ? p.M : p.m;
+  ctx.fillText(`Diagrama de cuerpo libre · ${nm} (${fmt(ms, 1)} kg · ${MAT(which === 'A' ? p.mA : p.mB).name})`, 14, 12);
+  if (which === 'A'){
+    const size = 44, th = G.th;
+    // superficie
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(-th);
+    ctx.strokeStyle = '#C5D36B'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-W, size / 2); ctx.lineTo(W, size / 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(197,211,107,.5)'; ctx.lineWidth = 1.5;
+    for (let x = -W; x < W; x += 14){ ctx.beginPath(); ctx.moveTo(x, size / 2); ctx.lineTo(x - 8, size / 2 + 10); ctx.stroke(); }
+    // ejes
+    ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(244,235,221,.35)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-W * .45, 0); ctx.lineTo(W * .45, 0); ctx.moveTo(0, -H * .45); ctx.lineTo(0, H * .4); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+    drawBlock(ctx, cx, cy, size, -th, p.cA, p.nA, p.M, MAT(p.mA).tex);
+    ctx.fillStyle = 'rgba(244,235,221,.6)'; ctx.font = `600 12px ${FONT}`; ctx.textAlign = 'center';
+    ctx.fillText("eje paralelo (x′)", cx + Math.cos(-th) * W * .36, cy + Math.sin(-th) * W * .36 + 8);
+    ctx.fillText("eje perpendicular (y′)", cx + Math.cos(-th - Math.PI / 2) * H * .36 + 40, cy + Math.sin(-th - Math.PI / 2) * H * .36);
+    drawForces(ctx, cx, cy, Fo.A, kF, maxLen);
+  } else {
+    const size = 40;
+    ctx.strokeStyle = 'rgba(244,235,221,.35)'; ctx.setLineDash([4, 5]); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx, cy - H * .4); ctx.lineTo(cx, cy + H * .4); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = '#F4EBDD'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(cx, cy - size / 2); ctx.lineTo(cx, 34); ctx.stroke();
+    drawBlock(ctx, cx, cy, size, 0, p.cB, p.nB, p.m, MAT(p.mB).tex);
+    drawForces(ctx, cx, cy, Fo.B, kF, maxLen);
+  }
+}
+
+/* ---------- datos, ecuación y leyenda ---------- */
+const RO = [['t','Tiempo','s'],['x','Recorrido del bloque del plano','m'],['v','Velocidad','m/s'],['a','Aceleración','m/s²'],['T','Tensión de la cuerda','N'],['N','Normal','N'],['fr','Rozamiento',''],['Ek','Energía cinética','J'],['Ep','Cambio de energía potencial','J'],['Q','Calor (fricción)','J']];
+const LEG = [
+  {k:'W', name:'Peso (P = m·g)'}, {k:'Pc', name:'Componentes del peso (P∥, P⊥)'}, {k:'N', name:'Normal (N)'}, {k:'T', name:'Tensión (T)'},
+  {k:'f', name:'Rozamiento (fs o fk)'}, {k:'Fa', name:'Fuerza aplicada (F)'},
+  {k:'net', name:'Fuerza neta (ΣF)'}, {k:'v', name:'Velocidad (v)'}, {k:'a', name:'Aceleración (a)'},
+];
+function vf(x){ return x == null ? '—' : fmt(x, 2); }
+function updateDOM(){
+  const {G, d} = CA;
+  const set = (id, t) => { const e = $('#' + id); if (e && e.textContent !== t) e.textContent = t; };
+  set('ro_t', fmt(S.t)); set('ro_x', fmt(S.x)); set('ro_v', fmt(S.v)); set('ro_a', fmt(d.aM)); set('ro_T', fmt(d.T)); set('ro_N', fmt(d.N));
+  set('ro_fr', d.mode === 'estática' ? `${fmt(Math.abs(d.fu))} N (estática)` : (Math.abs(d.fu) > 1e-9 ? `${fmt(Math.abs(d.fu))} N (cinética)` : '0 N'));
+  const Ek = .5 * p.M * S.v * S.v + .5 * p.m * S.vm * S.vm, Ep = p.M * p.g * G.s * S.x - p.m * p.g * S.xm;
+  set('ro_Ek', fmt(Ek)); set('ro_Ep', fmt(Ep)); set('ro_Q', fmt(S.Q));
+
+  // ecuación
+  const M = p.M, m = p.m, gr = p.g;
+  if (S.slack){
+    set('eqSym', 'Cuerda floja: T = 0, cada bloque se mueve por su cuenta');
+    set('eqNum', `${p.nA}: a = ${fmt(d.aM)} m/s²   ·   ${p.nB}: a = ${fmt(d.am)} m/s²`);
+  } else {
+    const terms = [[`${p.nB}·g`, m * gr], [`− ${p.nA}·g·sen θ`, -M * gr * G.s]];
+    if (Math.abs(p.F) > 1e-9) terms.push(['+ F', p.F]);
+    if (Math.abs(d.fu) > 1e-9) terms.push([d.fu < 0 ? (d.mode === 'estática' ? '− fs' : '− fk') : (d.mode === 'estática' ? '+ fs' : '+ fk'), d.fu]);
+    set('eqSym', 'Fuerzas a favor − fuerzas en contra = (masas)·a\n'.replace('\n', '') + '  →  ' + terms.map(t => t[0]).join(' ') + ` = (${p.nA} + ${p.nB})·a`);
+    set('eqNum', terms.map((t, i) => i === 0 ? fmt(t[1]) : (t[1] < 0 ? '− ' : '+ ') + fmt(Math.abs(t[1]))).join(' ') + ` = ${fmt(M + m)}·a   →   a = ${fmt(d.aM)} m/s²`);
+  }
+
+  // estado
+  let st, warn = false;
+  if (S.collided){ st = `Choque: ${S.collided}. Pulsa Reiniciar.`; warn = true; }
+  else if (S.slack) st = 'Cuerda floja: la tensión es 0';
+  else if (d.mode === 'estática' && Math.abs(S.v) < 1e-3) st = Math.abs(d.fu) > 1e-9 ? 'En equilibrio: la fricción estática sostiene el sistema' : 'En equilibrio';
+  else if (S.v > 1e-3) st = `${p.nA} sube por el plano · ${p.nB} baja`;
+  else if (S.v < -1e-3) st = `${p.nA} baja por el plano · ${p.nB} sube`;
+  else st = d.aM > 0 ? `Arrancando: ${p.nA} sube` : `Arrancando: ${p.nA} baja`;
+  const chip = $('#status'); set('status', st); chip.classList.toggle('warn', warn);
+
+  // leyenda
+  const {A, B} = CA.Fo, mg = f => Math.hypot(f.vx, f.vy), find = (L, key, sym) => L.find(f => f.key === key && (!sym || f.sym === sym));
+  const V = {
+    W:[mg(A[0]), mg(B[0])], Pc:[mg(A[1]), mg(A[2])], N:[mg(A[3]), null], T:[d.T, d.T],
+    f:[d.fu, null], Fa:[p.F, null],
+    net:[M * d.aM, m * d.am], v:[S.v, S.vm], a:[d.aM, d.am],
+  };
+  for (const row of LEG){
+    const v = V[row.k];
+    if (row.k === 'Pc'){ set('lg_Pc_a', `∥ ${vf(v[0])} · ⊥ ${vf(v[1])}`); set('lg_Pc_b', '—'); continue; }
+    set(`lg_${row.k}_a`, vf(v[0])); set(`lg_${row.k}_b`, vf(v[1]));
+  }
+  set('lgA', p.nA); set('lgB', p.nB);
+}
+
+/* ---------- interfaz ---------- */
+function decimals(step){ return step < .1 ? 2 : step < 1 ? 1 : 0; }
+function syncUI(k){ const c = ctl[k]; if (!c) return; c.range.value = p[k]; c.num.value = Number(p[k]).toFixed(decimals(c.def.step)); }
+function bounds(){
+  const G = geometry(); let changed = false;
+  const dr = ctl.d0, yr = ctl.ym0;
+  dr.range.min = dr.num.min = G.dmin.toFixed(2); dr.range.max = dr.num.max = G.dmax.toFixed(2);
+  yr.range.min = yr.num.min = G.ymin.toFixed(2); yr.range.max = yr.num.max = G.ymax.toFixed(2);
+  if (Math.abs(p.d0 - G.d0) > 1e-9){ p.d0 = G.d0; changed = true; }
+  if (Math.abs(p.ym0 - G.ym0) > 1e-9){ p.ym0 = G.ym0; changed = true; }
+  syncUI('d0'); syncUI('ym0');
+  return changed;
+}
+const matCtl = {};
+function syncMat(){
+  for (const w of ['A', 'B']){
+    const c = matCtl[w]; if (!c) continue; const m = MAT(p[c.k]);
+    const same = w === 'B' || (Math.abs(p.mus - m.mus) < 1e-6 && Math.abs(p.muk - m.muk) < 1e-6);
+    c.sel.value = same ? m.id : 'custom';
+    c.hint.textContent = w === 'A'
+      ? `Densidad ${m.rho} kg/m³ (define el tamaño). μ típicos contra el plano: ${m.mus.toFixed(2)} / ${m.muk.toFixed(2)}; al elegir el material se cargan y luego puedes ajustarlos.`
+      : `Densidad ${m.rho} kg/m³ (define el tamaño). Este bloque no roza con nada, así que el material no cambia la física.`;
+  }
+}
+function setMaterial(w, id){
+  const m = MAT(id), c = matCtl[w];
+  p[c.k] = id; p[c.ck] = m.color; if (idCtl[c.ck]) idCtl[c.ck].value = m.color;
+  if (w === 'A'){ p.mus = m.mus; p.muk = m.muk; syncUI('mus'); syncUI('muk'); }
+  bounds(); resetSim(); setRunning(false); syncMat();
+}
+function setParam(k, v){
+  p[k] = v;
+  if (k === 'mus' && p.muk > v){ p.muk = v; syncUI('muk'); }
+  if (k === 'muk' && p.mus < v){ p.mus = v; syncUI('mus'); }
+  if (GEO.has(k) || k === 'M' || k === 'm'){
+    const ch = bounds();
+    if (GEO.has(k) || ch) resetSim();
+  }
+  if (k === 'mus' || k === 'muk') syncMat();
+}
+function makeRow(r){
+  const wrap = document.createElement('div');
+  if (r.t === 'ident'){
+    wrap.className = 'ident';
+    wrap.innerHTML = `<span>${r.label}</span><input type="text" maxlength="6" aria-label="Nombre de ${r.label}" value="${p[r.k]}"><input type="color" aria-label="Color de ${r.label}" value="${p[r.ck]}">`;
+    const [t, c] = wrap.querySelectorAll('input');
+    t.addEventListener('input', () => { p[r.k] = t.value || '?'; });
+    c.addEventListener('input', () => { p[r.ck] = c.value; });
+    idCtl[r.ck] = c;
+    return wrap;
+  }
+  if (r.t === 'mat'){
+    wrap.className = 'matrow';
+    const id = 'mat_' + r.which;
+    wrap.innerHTML = `<label for="${id}">Material</label><select id="${id}">${MATS.map(x => `<option value="${x.id}">${x.name}</option>`).join('')}<option value="custom" hidden>Personalizado (μ ajustado)</option></select><p class="hint" id="${id}_h"></p>`;
+    matCtl[r.which] = {sel:wrap.querySelector('select'), hint:wrap.querySelector('.hint'), k:r.k, ck:r.ck};
+    matCtl[r.which].sel.addEventListener('change', e => { if (e.target.value !== 'custom') setMaterial(r.which, e.target.value); });
+    return wrap;
+  }
+  if (r.t === 'planets'){
+    wrap.className = 'planets';
+    for (const [n, g] of [['Tierra', 9.81], ['Luna', 1.62], ['Marte', 3.71], ['Júpiter', 24.79]]){
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = `${n} · ${g}`;
+      b.addEventListener('click', () => { p.g = g; syncUI('g'); });
+      wrap.appendChild(b);
+    }
+    return wrap;
+  }
+  wrap.className = 'row';
+  const id = 'in_' + r.k, dec = decimals(r.step);
+  wrap.innerHTML = `<label for="${id}">${r.label}</label><span class="val"><input id="${id}" type="number" class="num" step="${r.step}"><span class="u">${r.unit}</span></span><input type="range" class="rng" min="${r.min}" max="${r.max}" step="${r.step}" aria-label="${r.label}">`;
+  const num = wrap.querySelector('.num'), range = wrap.querySelector('.rng');
+  ctl[r.k] = {num, range, def:r};
+  num.addEventListener('input', () => {
+    let v = parseFloat(num.value); if (!isFinite(v)) return;
+    const lo = r.hmin != null ? r.hmin : parseFloat(range.min), hi = r.hmax != null ? r.hmax : parseFloat(range.max);
+    v = clamp(v, lo, hi); range.value = v; setParam(r.k, v);
+  });
+  num.addEventListener('change', () => syncUI(r.k));
+  range.addEventListener('input', () => { const v = parseFloat(range.value); num.value = v.toFixed(dec); setParam(r.k, v); });
+  return wrap;
+}
+function buildPanel(){
+  const panel = $('#panel');
+  for (const gr of GROUPS){
+    const sec = document.createElement('section'); sec.className = 'grp';
+    const h = document.createElement('h2'); h.textContent = gr.title; sec.appendChild(h);
+    for (const r of gr.rows) sec.appendChild(makeRow(r));
+    panel.appendChild(sec);
+  }
+  const sec = document.createElement('section'); sec.className = 'grp';
+  sec.innerHTML = `<h2>Vectores y sus valores</h2><table class="legend"><thead><tr><th>Mostrar</th><th id="lgA">M</th><th id="lgB">m</th></tr></thead><tbody></tbody></table><p class="hint">Valores en N (velocidad en m/s, aceleración en m/s²). Los vectores punteados del peso son sus componentes; ΣF es la fuerza neta.</p>`;
+  const tb = sec.querySelector('tbody');
+  for (const r of LEG){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><label><input type="checkbox" checked data-k="${r.k}"><span class="sw" style="background:${COL[r.k]}"></span>${r.name}</label></td><td class="v" id="lg_${r.k}_a">—</td><td class="v" id="lg_${r.k}_b">—</td>`;
+    tr.querySelector('input').addEventListener('change', e => { show[r.k] = e.target.checked; });
+    tb.appendChild(tr);
+  }
+  panel.appendChild(sec);
+}
+function syncAll(){ for (const k in ctl) syncUI(k); }
+function applyPreset(v){
+  const old = {A:p.mA, B:p.mB};
+  Object.assign(p, {mA:'madera', mB:'aluminio'}, v);
+  for (const [w, k, ck] of [['A', 'mA', 'cA'], ['B', 'mB', 'cB']]) if (p[k] !== old[w]){ p[ck] = MAT(p[k]).color; if (idCtl[ck]) idCtl[ck].value = p[ck]; }
+  bounds(); syncAll(); bounds(); syncMat(); resetSim(); setRunning(false);
+}
+function setRunning(r){
+  running = r; $('#play').textContent = r ? 'Pausar' : (S && S.t > 0 && !S.collided ? 'Continuar' : 'Iniciar');
+}
+
+function init(){
+  const pr = $('#presets');
+  PRESETS.forEach(ps => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = ps.name;
+    b.addEventListener('click', () => { applyPreset(ps.v); pr.querySelectorAll('.btn').forEach(x => x.classList.toggle('on', x === b)); });
+    pr.appendChild(b);
+  });
+  const ro = $('#readout');
+  RO.forEach(([id, name, unit]) => {
+    const c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = `<span class="k">${name}</span><strong id="ro_${id}">0</strong><span class="u">${unit}</span>`;
+    ro.appendChild(c);
+  });
+  buildPanel();
+  resetSim();
+  applyPreset(PRESETS[1].v);
+  syncMat();
+  pr.querySelectorAll('.btn')[1].classList.add('on');
+
+  $('#play').addEventListener('click', () => {
+    if (S.collided) resetSim();
+    setRunning(!running);
+  });
+  $('#reset').addEventListener('click', () => { resetSim(); setRunning(false); });
+  $('#speed').addEventListener('change', e => { speed = parseFloat(e.target.value); });
+  $('#vscale').addEventListener('input', e => { vscale = parseFloat(e.target.value); });
+  $('#theme').addEventListener('click', () => {
+    const root = document.documentElement;
+    const cur = root.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    root.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+  });
+  requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+}
+
+let last = 0;
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (running){
+    acc += dt * speed; const h = 1 / 480; let n = 0;
+    while (acc >= h && n < 800){ stepPhys(h); acc -= h; n++; if (!running) break; }
+    if (!running) acc = 0;
+  }
+  try {
+    computeAll(); drawScene(); drawFBD($('#fbdA'), 'A'); drawFBD($('#fbdB'), 'B'); updateDOM();
+  } catch (err) { console.error(err); }
+  requestAnimationFrame(frame);
+}
+init();
+})();
+</script>
+</body>
+</html>
